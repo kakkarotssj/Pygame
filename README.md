@@ -1,1 +1,1 @@
-# Use of pygame to make games and apps
+# Simple Pong Game for 2 Players

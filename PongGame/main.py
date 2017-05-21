@@ -1,0 +1,204 @@
+import pygame
+import os
+import sys
+import random
+import time
+
+pygame.init()
+
+
+def load_sound(file_name):
+    full_path = os.path.join("requirements", file_name)
+    try:
+        sound = pygame.mixer.Sound(full_path)
+    except pygame.error, message:
+        raise SystemExit, message
+
+    return sound
+
+# CONSTANTS
+SCREEN_WIDTH = 1300
+SCREEN_HEIGHT = 731
+PADDLE_WIDTH = 10
+PADDLE_HEIGHT = 100
+PADDLE_SPEED = 30
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+PADDLE_LEFT_X = 0
+PADDLE_RIGHT_Y = 1290
+fpsClock = 50
+
+# GLOBAL VARIABLES
+game_state = True
+paddle_center_y = SCREEN_HEIGHT / 2
+ball_speed = [7, 7]
+winner_of_game = None
+
+# INITIALIZING DISPLAY
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+screen_rect = screen.get_rect()
+
+
+class Paddle(pygame.sprite.Sprite):
+    def __init__(self, player_identification):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.Surface((PADDLE_WIDTH, PADDLE_HEIGHT))
+        self.image.fill(WHITE)
+        self.rect = self.image.get_rect()
+        self.player_id = player_identification
+        self.rect.centery = paddle_center_y
+        self.score = 0
+
+        if player_identification == "left":
+            self.rect.x = PADDLE_LEFT_X
+        if player_identification == "right":
+            self.rect.x = PADDLE_RIGHT_Y
+
+    def move_paddle(self, up_or_down):
+        if up_or_down == "up":
+            self.rect.y -= PADDLE_SPEED
+        if up_or_down == "down":
+            self.rect.y += PADDLE_SPEED
+
+
+class Ball(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.Surface((5, 5))
+        self.image.fill(WHITE)
+        self.rect = self.image.get_rect()
+        self.rect.x = SCREEN_WIDTH / 2
+        self.rect.y = SCREEN_HEIGHT / 2
+        self.speed = ball_speed
+
+        random_number = random.randint(1, 2)
+        if random_number == 1:
+            self.speed[0] = ball_speed[0] * 1
+        if random_number == 2:
+            self.speed[0] = ball_speed[0] * (-1)
+
+    def update_ball(self, player_left, player_right, music):
+        self.rect.x += self.speed[0]
+        self.rect.y += self.speed[1]
+
+        if self.rect.y < 0 or self.rect.y + self.rect.height > SCREEN_HEIGHT:
+            self.speed[1] *= -1
+
+        if self.rect.x < screen_rect.x:
+            player_right.score += 1
+            self.rect.center = [SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2]
+            if self.speed[0] < 0:
+                self.speed[0] *= -1
+
+        if self.rect.x + self.rect.width > screen_rect.right:
+            player_left.score += 1
+            self.rect.center = [SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2]
+            if self.speed[0] > 0:
+                self.speed[0] *= -1
+
+        if pygame.sprite.collide_rect(self, player_right):
+            if self.speed[0] < 10:
+                self.speed[0] *= -1.1
+            else:
+                self.speed[0] *= -1
+            music.play(1)
+        if pygame.sprite.collide_rect(self, player_left):
+            if self.speed[0] < 10:
+                self.speed[0] *= -1.1
+            else:
+                self.speed[0] *= -1
+            music.play(1)
+
+
+def play_hit_sound(hit):
+    hit.play()
+
+
+def check_game_over(player_left, player_right):
+    if player_left.score == 5:
+        return True, "left"
+    if player_right.score == 5:
+        return True, "right"
+    return False, ""
+
+clock = pygame.time.Clock()
+
+score_left_player_obj = pygame.font.Font("freesansbold.ttf", 120)
+score_right_player_obj = pygame.font.Font("freesansbold.ttf", 120)
+
+
+def update_scores(player_left, player_right):
+    score_left_player_obj_surface = score_left_player_obj.render(str(player_left.score), True, WHITE)
+    score_left_player_obj_surface_rect = score_left_player_obj_surface.get_rect()
+    score_left_player_obj_surface_rect.center = (100, 50)
+    screen.blit(score_left_player_obj_surface, score_left_player_obj_surface_rect)
+
+    score_right_player_obj_surface = score_right_player_obj.render(str(player_right.score), True, WHITE)
+    score_right_player_obj_surface_rect = score_right_player_obj_surface.get_rect()
+    score_right_player_obj_surface_rect.center = (1000, 50)
+    screen.blit(score_right_player_obj_surface, score_right_player_obj_surface_rect)
+
+
+def display_game_over(player_identification):
+    global winner_of_game
+    winner_of_game = "GAME OVER ::: " + player_identification + " PLAYER WINS"
+    game_over_font_obj = pygame.font.Font("freesansbold.ttf", 70)
+    game_over_font_obj_surface = game_over_font_obj.render(str(winner_of_game), True, WHITE)
+    game_over_font_obj_surface_rect = game_over_font_obj_surface.get_rect()
+    game_over_font_obj_surface_rect.center = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+    screen.fill(BLACK)
+    screen.blit(game_over_font_obj_surface, game_over_font_obj_surface_rect)
+
+
+def main():
+
+    #run background_music
+    background_music = load_sound("background_pong.ogg")
+    background_music.play(-1)
+
+    #load sound
+    hit = load_sound("beep.wav")
+
+    player_left = Paddle("left")
+    player_right = Paddle("right")
+    ball = Ball()
+
+    all_sprites = pygame.sprite.RenderPlain(player_left, player_right, ball)
+
+    while True:
+
+        screen.fill(BLACK)
+        all_sprites.draw(screen)
+
+        update_scores(player_left, player_right)
+
+        ball.update_ball(player_left, player_right, hit)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    player_right.move_paddle("up")
+                if event.key == pygame.K_DOWN:
+                    player_right.move_paddle("down")
+                if event.key == pygame.K_w:
+                    player_left.move_paddle("up")
+                if event.key == pygame.K_s:
+                    player_left.move_paddle("down")
+
+        true_or_false, player_identification = check_game_over(player_left, player_right)
+        if true_or_false:
+            display_game_over(player_identification)
+
+        pygame.display.update()
+
+        if winner_of_game is not None:
+            time.sleep(2)
+            sys.exit()
+        clock.tick(fpsClock)
+
+if __name__ == "__main__":
+    main()
