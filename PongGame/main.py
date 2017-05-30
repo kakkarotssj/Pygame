@@ -5,6 +5,7 @@ import random
 import time
 
 pygame.init()
+pygame.mouse.set_visible(False)
 
 
 def load_sound(file_name):
@@ -21,7 +22,7 @@ SCREEN_WIDTH = 1300
 SCREEN_HEIGHT = 731
 PADDLE_WIDTH = 10
 PADDLE_HEIGHT = 100
-PADDLE_SPEED = 30
+PADDLE_SPEED = 10
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 PADDLE_LEFT_X = 0
@@ -36,6 +37,7 @@ winner_of_game = None
 
 # INITIALIZING DISPLAY
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("PONG")
 screen_rect = screen.get_rect()
 
 
@@ -56,9 +58,14 @@ class Paddle(pygame.sprite.Sprite):
 
     def move_paddle(self, up_or_down):
         if up_or_down == "up":
-            self.rect.y -= PADDLE_SPEED
+            self.rect.move_ip(0, -1*PADDLE_SPEED)
+            if self.rect.y < 0:
+                self.rect.y = 0
+
         if up_or_down == "down":
-            self.rect.y += PADDLE_SPEED
+            self.rect.move_ip(0, 1*PADDLE_SPEED)
+            if self.rect.y > SCREEN_HEIGHT - PADDLE_HEIGHT:
+                self.rect.y = SCREEN_HEIGHT - PADDLE_HEIGHT
 
 
 class Ball(pygame.sprite.Sprite):
@@ -73,13 +80,12 @@ class Ball(pygame.sprite.Sprite):
 
         random_number = random.randint(1, 2)
         if random_number == 1:
-            self.speed[0] = ball_speed[0] * 1
+            self.speed[0] = 1 * ball_speed[0]
         if random_number == 2:
-            self.speed[0] = ball_speed[0] * (-1)
+            self.speed[0] = -1 * ball_speed[0]
 
     def update_ball(self, player_left, player_right, music):
-        self.rect.x += self.speed[0]
-        self.rect.y += self.speed[1]
+        self.rect.move_ip(self.speed)
 
         if self.rect.y < 0 or self.rect.y + self.rect.height > SCREEN_HEIGHT:
             self.speed[1] *= -1
@@ -97,16 +103,16 @@ class Ball(pygame.sprite.Sprite):
                 self.speed[0] *= -1
 
         if pygame.sprite.collide_rect(self, player_right):
-            if self.speed[0] < 10:
+            if self.rect.y < player_right.rect.centery or self.rect.y > player_right.rect.centery:
                 self.speed[0] *= -1.1
-            else:
-                self.speed[0] *= -1
+                if self.speed[0] > 10:
+                    self.speed[0] = 10
             music.play(1)
         if pygame.sprite.collide_rect(self, player_left):
-            if self.speed[0] < 10:
+            if self.rect.y < player_left.rect.centery or self.rect.y > player_left.rect.centery:
                 self.speed[0] *= -1.1
-            else:
-                self.speed[0] *= -1
+                if self.speed[0] > 10:
+                    self.speed[0] = 10
             music.play(1)
 
 
@@ -179,15 +185,15 @@ def main():
                 pygame.quit()
                 sys.exit()
 
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
-                    player_right.move_paddle("up")
-                if event.key == pygame.K_DOWN:
-                    player_right.move_paddle("down")
-                if event.key == pygame.K_w:
-                    player_left.move_paddle("up")
-                if event.key == pygame.K_s:
-                    player_left.move_paddle("down")
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_UP]:
+            player_right.move_paddle("up")
+        if keys[pygame.K_DOWN]:
+            player_right.move_paddle("down")
+        if keys[pygame.K_w]:
+            player_left.move_paddle("up")
+        if keys[pygame.K_s]:
+            player_left.move_paddle("down")
 
         true_or_false, player_identification = check_game_over(player_left, player_right)
         if true_or_false:
@@ -197,6 +203,7 @@ def main():
 
         if winner_of_game is not None:
             time.sleep(2)
+            background_music.stop()
             sys.exit()
         clock.tick(fpsClock)
 
