@@ -29,7 +29,7 @@ def exit_properly(background_music):
 
 
 def load_sound(file_name):
-    full_path = os.path.join("data", file_name)
+    full_path = os.path.join("requirements", file_name)
 
     try:
         sound = pygame.mixer.Sound(full_path)
@@ -40,7 +40,7 @@ def load_sound(file_name):
 
 
 def load_image(file_name):
-    full_path = os.path.join("data", file_name)
+    full_path = os.path.join("requirements", file_name)
 
     try:
         image_surface = pygame.image.load(full_path)
