@@ -50,32 +50,14 @@ def load_image(file_name):
     return image_surface
 
 
-def display_game_over(game_over_font_object, restart_game_font_object, screen, background_music,
-                      background_image_surface, screen_rect, upper_pipe_image_surface, upper_pipe_image_surface_rect,
-                      lower_pipe_image_surface, lower_pipe_image_surface_rect, bird):
-
-    background_music.stop()
-
+def display_game_over(game_over_font_object, screen, background_music):
     game_over_font_object_surface = game_over_font_object.render("GAME  OVER!!", True, SCORE_COLOR)
     game_over_font_object_surface_rect = game_over_font_object_surface.get_rect()
     game_over_font_object_surface_rect.center = (SCREEN_WIDTH/2 + 22, SCREEN_HEIGHT/2 + 60)
-
-    i = 3
-    while i != 0:
-        text_material = "Restarting in " + str(i)
-        restart_game_font_object_surface = restart_game_font_object.render(text_material, True, SCORE_COLOR)
-        restart_game_font_object_surface_rect = restart_game_font_object_surface.get_rect()
-        restart_game_font_object_surface_rect.center = (SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 100)
-
-        blit_sprites(screen, background_image_surface, screen_rect, upper_pipe_image_surface,
-                     upper_pipe_image_surface_rect, lower_pipe_image_surface, lower_pipe_image_surface_rect, bird)
-        screen.blit(game_over_font_object_surface, game_over_font_object_surface_rect)
-        screen.blit(restart_game_font_object_surface, restart_game_font_object_surface_rect)
-
-        pygame.display.update()
-        time.sleep(1)
-        i -= 1
-
+    screen.blit(game_over_font_object_surface, game_over_font_object_surface_rect)
+    pygame.display.update()
+    background_music.stop()
+    time.sleep(2)
     main()
 
 
@@ -114,15 +96,6 @@ class Bird:
         self.rect = pygame.Rect(BIRD_X, self.y, BIRD_WIDTH, BIRD_HEIGHT)
 
 
-def blit_sprites(screen, background_image_surface, screen_rect, upper_pipe_image_surface, upper_pipe_image_surface_rect,
-                 lower_pipe_image_surface, lower_pipe_image_surface_rect, bird):
-
-    screen.blit(background_image_surface, (screen_rect.x, screen_rect.y))
-    screen.blit(upper_pipe_image_surface, upper_pipe_image_surface_rect)
-    screen.blit(lower_pipe_image_surface, lower_pipe_image_surface_rect)
-    screen.blit(bird.current_image_surface, (BIRD_X, bird.y))
-
-
 def main():
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     screen_rect = screen.get_rect()
@@ -145,9 +118,8 @@ def main():
     upper_pipe_image_surface_rect.x, upper_pipe_image_surface_rect.y = 450, 361 + random_value - GAP_IN_PIPES/2 - 500
     lower_pipe_image_surface_rect.x, lower_pipe_image_surface_rect.y = 450, 361 + random_value + GAP_IN_PIPES/2
 
-    score_font_object = pygame.font.Font("freesansbold.ttf", 30)
-    game_over_font_object = pygame.font.Font("freesansbold.ttf", 40)
-    restart_game_font_object = pygame.font.Font("freesansbold.ttf", 30)
+    score_font_object = pygame.font.Font("freesansbold.ttf", 40)
+    game_over_font_object = pygame.font.Font("freesansbold.ttf", 50)
 
     change_pipes = False
 
@@ -164,14 +136,12 @@ def main():
             bird.dead = True
 
         if bird.dead:
-            display_game_over(game_over_font_object, restart_game_font_object, screen, background_music,
-                              background_image_surface, screen_rect, upper_pipe_image_surface,
-                              upper_pipe_image_surface_rect, lower_pipe_image_surface, lower_pipe_image_surface_rect,
-                              bird)
+            display_game_over(game_over_font_object, screen, background_music)
 
-        blit_sprites(screen, background_image_surface, screen_rect, upper_pipe_image_surface,
-                     upper_pipe_image_surface_rect, lower_pipe_image_surface, lower_pipe_image_surface_rect, bird)
-
+        screen.blit(background_image_surface, (screen_rect.x, screen_rect.y))
+        screen.blit(upper_pipe_image_surface, upper_pipe_image_surface_rect)
+        screen.blit(lower_pipe_image_surface, lower_pipe_image_surface_rect)
+        screen.blit(bird.current_image_surface, (BIRD_X, bird.y))
         display_score(score_font_object, screen, bird)
 
         upper_pipe_image_surface_rect.x -= 2
@@ -185,10 +155,8 @@ def main():
 
         if change_pipes:
             random_value = random.randint(-200, 200)
-            upper_pipe_image_surface_rect.x = 450
-            upper_pipe_image_surface_rect.y = 361 + random_value - GAP_IN_PIPES/2 - 500
-            lower_pipe_image_surface_rect.x = 450
-            lower_pipe_image_surface_rect.y = 361 + random_value + GAP_IN_PIPES/2
+            upper_pipe_image_surface_rect.x, upper_pipe_image_surface_rect.y = 450, 361 + random_value - GAP_IN_PIPES/2 - 500
+            lower_pipe_image_surface_rect.x, lower_pipe_image_surface_rect.y = 450, 361 + random_value + GAP_IN_PIPES/2
             change_pipes = False
 
         for event in pygame.event.get():
